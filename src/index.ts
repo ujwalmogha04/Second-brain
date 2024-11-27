@@ -1,3 +1,5 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 const app = express();
@@ -6,7 +8,7 @@ import { UserModel } from "./db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { userMiddleware } from "./middleware";
-import { JWT_SECRET } from "./config";
+
 
 app.use(express.json());
 
@@ -18,7 +20,7 @@ app.post("/api/v1/signup", async (req: Request, res: Response) : Promise<any> =>
 
     if (!validateSchema.success) {
         return res.status(400).json({
-            message: "Inavlid schema",
+            message: "Invalid schema",
             errors: validateSchema.error.errors
         })
     }
@@ -69,7 +71,7 @@ app.post("/api/v1/signin", async (req, res) : Promise<any> => {
         const exisitngUser = await UserModel.findOne({ username });
 
         if (!exisitngUser) {
-            return res.status(403).json({
+            return res.status(404).json({
                 message: "user Does not exists , signup first"
             })
         }
@@ -83,7 +85,7 @@ app.post("/api/v1/signin", async (req, res) : Promise<any> => {
         }
         const token = jwt.sign({
             id: exisitngUser._id
-        }, JWT_SECRET);
+        }, process.env.JWT_SECRET as string);
 
         return res.status(200).json({
             message: "Login successful",
@@ -124,7 +126,7 @@ app.get("api/v1/brain/:shareLink", (req, res) => {
 
 async function main(): Promise<void> {
     try {
-        await mongoose.connect("mongodb+srv://Ujwal:Ujwal2510@merncluster.5dodjsu.mongodb.net/Second-Brain");
+        await mongoose.connect(process.env.DB_SECRET as string);
         console.log("Sucessfully connected to the database");
 
         app.listen(3000, () => {

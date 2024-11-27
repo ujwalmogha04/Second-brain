@@ -3,3 +3,6 @@ node_modules/
 
 # Ignore the dist (build output) folder
 dist/
+
+#Ignore the .env file
+.env/

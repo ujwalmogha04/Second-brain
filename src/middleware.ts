@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from 'express';
-import { JWT_SECRET } from "./config";
+
 
 interface DecodeToken {
     id : string
@@ -21,7 +21,7 @@ export function userMiddleware( req : RequestWithUser , res : Response , next : 
     }
 
     try{
-         const decode = jwt.verify( token , JWT_SECRET) as DecodeToken;
+         const decode = jwt.verify( token , process.env.JWT_SECRET as string) as DecodeToken;
          if(!decode){
             return res.status(401).json({
                 message : "Invalid Token"
