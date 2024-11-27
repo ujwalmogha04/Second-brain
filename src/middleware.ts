@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from 'express';
-const JWT_SECRET = "UJWAL_SECRET";
+import { JWT_SECRET } from "./config";
 
 interface DecodeToken {
     id : string
@@ -11,7 +11,7 @@ interface RequestWithUser extends Request {
 }
 
 
-function userMiddleware( req : RequestWithUser , res : Response , next : NextFunction) {
+export function userMiddleware( req : RequestWithUser , res : Response , next : NextFunction) {
     const token = req.headers.authorization;
 
     if(!token){
@@ -38,3 +38,5 @@ function userMiddleware( req : RequestWithUser , res : Response , next : NextFun
          })
     }
 }
+
+
