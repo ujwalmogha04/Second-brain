@@ -13,6 +13,8 @@ const ContentSchema = new Schema({
     title : String,
     tag : [{type : Schema.Types.ObjectId , ref : "Tag"}],
     userId : {type : Schema.Types.ObjectId , ref : "User" }, 
+} , {
+        timestamps: true 
 })
 
 const LinkSchema = new Schema ({
