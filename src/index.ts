@@ -4,10 +4,11 @@ import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 const app = express();
 import { contentSchema, userSignUpSchema, userSigninSchema } from "./schema";
-import { UserModel, ContentModel } from "./db";
+import { UserModel, ContentModel, LinkModel } from "./db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { userMiddleware } from "./middleware";
+import { randomBytes } from 'crypto';
 
 
 app.use(express.json());
@@ -145,11 +146,11 @@ app.post("/api/v1/addcontent", userMiddleware, async (req: RequestWithUser, res:
 app.get("/api/v1/content", userMiddleware, async (req: RequestWithUser, res: Response) => {
     const userId = req.userId;
     try {
-        const content = await ContentModel.find({userId}).populate("userId" , "username");
+        const content = await ContentModel.find({ userId }).populate("userId", "username");
 
-        if (content.length === 0){
+        if (content.length === 0) {
             return res.status(404).json({
-                message : "No content found for this user"
+                message: "No content found for this user"
             })
         }
 
@@ -166,23 +167,23 @@ app.get("/api/v1/content", userMiddleware, async (req: RequestWithUser, res: Res
 })
 
 //@ts-ignore
-app.delete("/api/v1/content", userMiddleware, async (req : RequestWithUser, res : Response) => {
+app.delete("/api/v1/content", userMiddleware, async (req: RequestWithUser, res: Response) => {
     const contentId = req.body.contentId;
     const userId = req.userId;
     try {
-          const contentToDelete = await ContentModel.findOne({userId , contentId})
+        const contentToDelete = await ContentModel.findOne({ userId, contentId })
 
-          if(!contentToDelete){
+        if (!contentToDelete) {
             return res.status(404).json({
-                 message : "Content not found or not associated with this user"
+                message: "Content not found or not associated with this user"
             })
-          }
- 
-        await ContentModel.deleteOne({_id: contentId})
+        }
 
-         return res.status(200).json({
-            message : "content deleted"
-         })
+        await ContentModel.deleteOne({ _id: contentId })
+
+        return res.status(200).json({
+            message: "content deleted"
+        })
 
     }
     catch (error: any) {
@@ -193,12 +194,88 @@ app.delete("/api/v1/content", userMiddleware, async (req : RequestWithUser, res 
     }
 })
 
-app.post("api/v1/brain/share", (req, res) => {
+//@ts-ignore
+app.post("/api/v1/brain/share", userMiddleware, async (req: RequestWithUser, res: Response) => {
+    const { share } = req.body;
 
-})
+    if (share) {
 
-app.get("api/v1/brain/:shareLink", (req, res) => {
+        try {
+            const exisitngLink = await LinkModel.findOne({ userId: req.userId })
+            if (exisitngLink) {
+                return res.json({
+                    hash: exisitngLink.hash
+                })
+            }
 
+            const hash = randomBytes(5).toString('hex');
+
+            const newLink = await LinkModel.create({
+                userId: req.userId,
+                hash: hash,
+            });
+
+            return res.status(201).json({
+                message: "Link shared successfully",
+                link: newLink
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                message: "Internal server error",
+                error: error.message,
+            });
+        }
+    } else {
+        return res.status(400).json({
+            message: "Share content is required",
+        });
+    }
+});
+
+//@ts-ignore
+app.get("/api/v1/brain/:shareLink", async (req: RequestWithUser, res: Response) => {
+    const hash = req.params.shareLink;
+    try {
+        const link = await LinkModel.findOne({ hash });
+
+        if (!link) {
+            return res.status(404).json({
+                message: "Link not found"
+            });
+        }
+
+        const content = await ContentModel.findOne({
+            userId: link.userId
+        })
+
+        if (!content) {
+            return res.status(404).json({
+                message: "Content Not Found"
+            })
+        }
+
+        const user = await UserModel.findOne({
+            _id: link.userId
+        })
+
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        return res.json({
+            username: user.username,
+            content: content
+        })
+
+    } catch (error: any) {
+        return res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+    }
 })
 
 
